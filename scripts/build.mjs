@@ -1,5 +1,5 @@
 /** Builds the root user site: project index, sitemap index, robots.txt and llms.txt. */
-import { mkdir, writeFile, copyFile } from "node:fs/promises";
+import { mkdir, writeFile, cp } from "node:fs/promises";
 
 const OWNER = "halitsever";
 const ORIGIN = `https://${OWNER}.github.io`;
@@ -159,6 +159,8 @@ const others = repos.filter((r) => !siteNames.has(r.name)).sort(byStars);
 const today = new Date().toISOString().slice(0, 10);
 
 await mkdir(OUT, { recursive: true });
+// Static files (social card, search console verification) are served as-is.
+await cp(new URL("../public/", import.meta.url), OUT, { recursive: true });
 await Promise.all([
   writeFile(new URL("index.html", OUT), indexHtml(sites, others)),
   writeFile(new URL("sitemap.xml", OUT), sitemapIndex(sites, today)),
@@ -166,6 +168,5 @@ await Promise.all([
   writeFile(new URL("robots.txt", OUT), robots()),
   writeFile(new URL("llms.txt", OUT), llms(sites, others)),
   writeFile(new URL(".nojekyll", OUT), ""),
-  copyFile(new URL("../public/og.png", import.meta.url), new URL("og.png", OUT)),
 ]);
 console.log(`${sites.length} project sites (${sites.filter((s) => s.sitemap).length} with sitemaps), ${others.length} other repos`);
