@@ -1,5 +1,5 @@
 <p align="center" class="logo-section">
-<img src="https://i.ibb.co/NrPh9xP/image.png" height="80" width="80" alt="Halit Sever logo"/>
+<img src="public/logo.svg" height="80" width="80" alt="halitsever.github.io logo, a fanned hand of project cards"/>
 <br/>
 <img src="https://halitsever-api.vercel.app/api/repo-title?title=halitsever.github.io">
 
@@ -18,7 +18,8 @@ Root GitHub Pages site for halitsever.github.io: an index of Halit Sever's open 
 <img src="https://halitsever-api.vercel.app/api/details"/>
 </p>
 
-- [**Project index**](https://halitsever.github.io/) - every public project, with project sites listed first and sorted by stars.
+- [**Project index**](https://halitsever.github.io/) - every public project as a wall of its own social cards, with the five most starred fanned out at the top.
+- [**Sitemap page**](https://halitsever.github.io/sitemap.html) - every page of every project site, grouped by project, for people and as internal links for crawlers.
 - [**Sitemap index**](https://halitsever.github.io/sitemap.xml) - links each project site's own sitemap, and lists the home page of sites that have none.
 - [**robots.txt**](https://halitsever.github.io/robots.txt) - crawlers only read robots.txt at the host root, so this one covers all project sites.
 - [**llms.txt**](https://halitsever.github.io/llms.txt) - a plain Markdown map of the projects for language models.

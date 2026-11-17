@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="halitsever.github.io logo">
+  <g stroke="#fff" stroke-width="3.5" stroke-linejoin="round" transform="translate(-6 -4)">
+    <rect x="22" y="44" width="84" height="46" rx="9" fill="#1b8fd6" transform="rotate(-24 64 100)"/>
+    <rect x="22" y="44" width="84" height="46" rx="9" fill="#ffd400" transform="rotate(-10 64 100)"/>
+    <rect x="22" y="44" width="84" height="46" rx="9" fill="#ff453a" transform="rotate(4 64 100)"/>
+    <g transform="rotate(18 64 100)">
+      <rect x="22" y="44" width="84" height="46" rx="9" fill="#000"/>
+      <rect x="32" y="55" width="38" height="7" rx="3.5" fill="#fff" stroke="none"/>
+      <rect x="32" y="67" width="26" height="5" rx="2.5" fill="#fff" fill-opacity=".55" stroke="none"/>
+    </g>
+  </g>
+</svg>

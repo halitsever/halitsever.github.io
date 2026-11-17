@@ -7,6 +7,8 @@ Root GitHub Pages user site. It sits above every project site at `halitsever.git
 - `scripts/build.mjs` builds everything in `_site/` from the GitHub API at deploy time. The repo holds no generated pages, so change the script, not the output.
 - The Pages workflow deploys on push to `main`, every Monday, and on manual dispatch. Pages is set to build from Actions, not from a branch.
 - A project is listed when its repo is public, not a fork, not archived, and has Pages on. A site that redirects (custom domain, such as watchbear) is listed under other repositories and kept out of the sitemap, because a sitemap index only covers this host.
+- Each project's social card is fetched through GraphQL (`openGraphImageUrl`) and saved to `_site/cards/`, so the token must be set for the wall and the hero pile to have images. `public/site.css` styles both `index.html` and `sitemap.html`.
+- `sitemap.html` lists every `<loc>` from each project sitemap. `sitemap.xml` stays plain XML: Chrome is removing XSLT, so there is no stylesheet on it.
 - A project site's own `sitemap.xml` goes into the sitemap index when it serves a `urlset` or `sitemapindex`; otherwise its home page goes into `sitemap-pages.xml`.
 
 ## Verify a change

@@ -27,7 +27,39 @@ async function probe(repo) {
   const sm = await fetch(`${home}sitemap.xml`, { redirect: "manual" });
   const body = sm.status === 200 ? await sm.text() : "";
   const hasSitemap = /<(urlset|sitemapindex)\b/.test(body);
-  return { ...repo, home, sitemap: hasSitemap ? `${home}sitemap.xml` : null };
+  const pages = /<urlset\b/.test(body) ? [...body.matchAll(/<loc>\s*([^<\s]+)\s*<\/loc>/g)].map((m) => m[1]) : [home];
+  return { ...repo, home, pages, sitemap: hasSitemap ? `${home}sitemap.xml` : null };
+}
+
+/** Social cards come from GraphQL because the REST repo payload has no Open Graph image. */
+async function socialCards() {
+  if (!token) return new Map();
+  const query = `{ user(login: "${OWNER}") { repositories(first: 100, privacy: PUBLIC, ownerAffiliations: OWNER) { nodes { name usesCustomOpenGraphImage openGraphImageUrl } } } }`;
+  const res = await fetch("https://api.github.com/graphql", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: JSON.stringify({ query }) });
+  if (!res.ok) throw new Error(`GitHub GraphQL ${res.status}`);
+  const nodes = (await res.json()).data.user.repositories.nodes;
+  return new Map(nodes.filter((n) => n.usesCustomOpenGraphImage).map((n) => [n.name, n.openGraphImageUrl]));
+}
+
+async function downloadCards(repos, cards) {
+  await mkdir(new URL("cards/", OUT), { recursive: true });
+  await Promise.all(
+    repos.map(async (r) => {
+      const url = cards.get(r.name);
+      if (!url) return;
+      const res = await fetch(url);
+      if (!res.ok) return;
+      await writeFile(new URL(`cards/${r.name}.png`, OUT), Buffer.from(await res.arrayBuffer()));
+      r.card = `/cards/${r.name}.png`;
+    }),
+  );
+}
+
+/** Stable tilt per project, so the wall looks hand-pinned but does not reshuffle on every build. */
+function tilt(name) {
+  let h = 0;
+  for (const c of name) h = (h * 31 + c.charCodeAt(0)) | 0;
+  return (((h >>> 0) % 50) / 10 - 2.5).toFixed(1);
 }
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -42,7 +74,11 @@ ${entries.map((loc) => `  <sitemap><loc>${esc(loc)}</loc><lastmod>${today}</last
 }
 
 function sitemapPages(sites) {
-  const urls = [{ loc: `${ORIGIN}/`, lastmod: new Date().toISOString().slice(0, 10) }];
+  const today = new Date().toISOString().slice(0, 10);
+  const urls = [
+    { loc: `${ORIGIN}/`, lastmod: today },
+    { loc: `${ORIGIN}/sitemap.html`, lastmod: today },
+  ];
   for (const s of sites.filter((s) => !s.sitemap)) urls.push({ loc: s.home, lastmod: s.pushed_at.slice(0, 10) });
   return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -80,9 +116,92 @@ ${others.map((r) => line(r, r.html_url)).join("\n")}
 `;
 }
 
-function card(r, url) {
-  const meta = [r.language, r.stargazers_count ? `${r.stargazers_count} stars` : null].filter(Boolean).join(" / ");
-  return `<li><a href="${esc(url)}"><span class="name">${esc(r.name)}</span><span class="desc">${esc(r.description)}</span><span class="meta">${esc(meta)}</span></a></li>`;
+function tile(r, url, i) {
+  const meta = [r.language, r.stargazers_count ? `${r.stargazers_count} ${r.stargazers_count === 1 ? "star" : "stars"}` : null].filter(Boolean).join(", ");
+  const art = r.card
+    ? `<img src="${r.card}" alt="" width="1280" height="640" loading="${i < 6 ? "eager" : "lazy"}" decoding="async">`
+    : `<span class="blank">${esc(r.name)}</span>`;
+  return `<li style="--tilt:${tilt(r.name)}deg;--i:${i}"><a href="${esc(url)}"><span class="art">${art}</span><span class="name">${esc(r.name)}</span><span class="desc">${esc(r.description)}</span>${meta ? `<span class="meta">${esc(meta)}</span>` : ""}</a></li>`;
+}
+
+/** The five most starred cards, fanned out next to the intro like a hand of cards. */
+function pile(repos) {
+  const top = [...repos]
+    .filter((r) => r.card)
+    .sort((a, b) => b.stargazers_count - a.stargazers_count)
+    .slice(0, 5)
+    .reverse();
+  const items = top.map(
+    (r, i) =>
+      `<a href="${esc(r.home ?? r.html_url)}" style="--n:${i - (top.length - 1) / 2}" aria-label="${esc(r.name)}"><img src="${r.card}" alt="" width="1280" height="640"></a>`,
+  );
+  return `<div class="pile">${items.join("")}</div>`;
+}
+
+function head({ title, description, path }) {
+  return `<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${esc(title)}</title>
+<meta name="description" content="${esc(description)}">
+<link rel="canonical" href="${ORIGIN}${path}">
+<link rel="icon" href="/logo.svg" type="image/svg+xml">
+<meta property="og:type" content="website">
+<meta property="og:title" content="${esc(title)}">
+<meta property="og:description" content="${esc(description)}">
+<meta property="og:url" content="${ORIGIN}${path}">
+<meta property="og:image" content="${ORIGIN}/og.png">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="640">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;600;800&display=swap">
+<link rel="stylesheet" href="/site.css">`;
+}
+
+/** Page paths read better than full URLs once the project is named above them. */
+function pagePath(url, home) {
+  const rest = url.startsWith(home) ? url.slice(home.length) : url;
+  return rest.replace(/\.html$/, "").replace(/\/$/, "") || "Home";
+}
+
+function sitemapHtml(sites, others) {
+  const title = "Sitemap: every page of Halit Sever's projects";
+  const description = "Every page across Halit Sever's open source project sites, grouped by project.";
+  const total = sites.reduce((n, s) => n + s.pages.length, 0);
+  const block = (s, i) => `<li class="project" style="--tilt:${tilt(s.name)}deg;--i:${i}">
+<a class="thumb" href="${esc(s.home)}" aria-label="${esc(s.name)}">${s.card ? `<img src="${s.card}" alt="" width="1280" height="640" loading="lazy" decoding="async">` : `<span class="blank">${esc(s.name)}</span>`}</a>
+<div><h3><a href="${esc(s.home)}">${esc(s.name)}</a></h3><p class="desc">${esc(s.description)}</p>
+<ul class="pages">${[...s.pages]
+    .sort((a, b) => (b === s.home) - (a === s.home))
+    .map((u) => `<li><a href="${esc(u)}">${esc(pagePath(u, s.home))}</a></li>`)
+    .join("")}</ul></div></li>`;
+  return `<!doctype html>
+<html lang="en">
+<head>
+${head({ title, description, path: "/sitemap.html" })}
+</head>
+<body>
+<header class="intro">
+<a href="/"><img class="logo" src="/logo.svg" alt="All projects" width="88" height="88"></a>
+<h1>Sitemap</h1>
+<p>${total} pages across ${sites.length} project sites, grouped by project. Search engines read the same list from <a href="/sitemap.xml">sitemap.xml</a>.</p>
+<nav><a href="/">All projects</a><a href="https://github.com/${OWNER}">GitHub</a></nav>
+</header>
+<main>
+<section>
+<h2>Project sites</h2>
+<ol class="map">${sites.map(block).join("")}</ol>
+</section>
+<section>
+<h2>Repositories without a site</h2>
+<ul class="pages cols">${others.map((r) => `<li><a href="${esc(r.html_url)}">${esc(r.name)}</a></li>`).join("")}</ul>
+</section>
+</main>
+<footer>Rebuilt from the GitHub API every Monday.</footer>
+</body>
+</html>
+`;
 }
 
 function indexHtml(sites, others) {
@@ -104,48 +223,32 @@ function indexHtml(sites, others) {
   return `<!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${esc(title)}</title>
-<meta name="description" content="${esc(description)}">
-<link rel="canonical" href="${ORIGIN}/">
-<meta property="og:type" content="website">
-<meta property="og:title" content="${esc(title)}">
-<meta property="og:description" content="${esc(description)}">
-<meta property="og:url" content="${ORIGIN}/">
-<meta property="og:image" content="${ORIGIN}/og.png">
-<meta property="og:image:width" content="1280">
-<meta property="og:image:height" content="640">
-<meta name="twitter:card" content="summary_large_image">
+${head({ title, description, path: "/" })}
 <script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, "\\u003c")}</script>
-<style>
-:root{color-scheme:light dark;--bg:#ffffff;--fg:#1f2328;--muted:#59636e;--line:#d1d9e0;--card:#f6f8fa;--accent:#0969da}
-@media (prefers-color-scheme:dark){:root{--bg:#0d1117;--fg:#e6edf3;--muted:#9198a1;--line:#30363d;--card:#151b23;--accent:#4493f8}}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
-main{max-width:960px;margin:0 auto;padding:56px 16px 72px}
-h1{font-size:2rem;margin:0 0 8px;letter-spacing:-.02em}
-h2{font-size:1rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:48px 0 16px}
-.lead{color:var(--muted);margin:0 0 8px;max-width:640px}
-.links a{color:var(--accent);margin-right:16px;text-decoration:none}
-ul{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
-li a{display:flex;flex-direction:column;gap:6px;height:100%;padding:16px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:inherit;text-decoration:none}
-li a:hover{border-color:var(--accent)}
-.name{font-weight:600;color:var(--accent);word-break:break-word}
-.desc{color:var(--fg);font-size:.95rem}
-.meta{color:var(--muted);font-size:.85rem;margin-top:auto}
-</style>
 </head>
 <body>
-<main>
+<header class="intro">
+<img class="logo" src="/logo.svg" alt="" width="88" height="88">
 <h1>Halit Sever</h1>
-<p class="lead">${esc(description)}</p>
-<p class="links"><a href="https://github.com/${OWNER}">GitHub</a><a href="https://www.halit.org/">halit.org</a></p>
-<h2>Project sites</h2>
-<ul>${sites.map((s) => card(s, s.home)).join("")}</ul>
-<h2>Other repositories</h2>
-<ul>${others.map((r) => card(r, r.html_url)).join("")}</ul>
+<div class="intro-body">
+<div>
+<p>I build open source tools: Node.js and TypeScript libraries, NestJS and Nuxt modules, macOS apps and tools for Claude Code. Every card below is a project you can use today.</p>
+<nav><a href="https://github.com/${OWNER}">GitHub</a><a href="https://www.halit.org/">halit.org</a><a href="/sitemap.html">Sitemap</a></nav>
+</div>
+${pile(all)}
+</div>
+</header>
+<main>
+<section>
+<h2>Projects with a website</h2>
+<ol class="wall">${sites.map((s, i) => tile(s, s.home, i)).join("")}</ol>
+</section>
+<section>
+<h2>More on GitHub</h2>
+<ol class="wall">${others.map((r, i) => tile(r, r.html_url, sites.length + i)).join("")}</ol>
+</section>
 </main>
+<footer>This page and its sitemap are rebuilt from the GitHub API every Monday.</footer>
 </body>
 </html>
 `;
@@ -161,6 +264,7 @@ const today = new Date().toISOString().slice(0, 10);
 await mkdir(OUT, { recursive: true });
 // Static files (social card, search console verification) are served as-is.
 await cp(new URL("../public/", import.meta.url), OUT, { recursive: true });
+await downloadCards([...sites, ...others], await socialCards());
 await Promise.all([
   writeFile(new URL("index.html", OUT), indexHtml(sites, others)),
   writeFile(new URL("sitemap.xml", OUT), sitemapIndex(sites, today)),
@@ -168,5 +272,6 @@ await Promise.all([
   writeFile(new URL("robots.txt", OUT), robots()),
   writeFile(new URL("llms.txt", OUT), llms(sites, others)),
   writeFile(new URL(".nojekyll", OUT), ""),
+  writeFile(new URL("sitemap.html", OUT), sitemapHtml(sites, others)),
 ]);
 console.log(`${sites.length} project sites (${sites.filter((s) => s.sitemap).length} with sitemaps), ${others.length} other repos`);
