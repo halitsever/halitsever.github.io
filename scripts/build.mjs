@@ -2,7 +2,7 @@
 import { mkdir, writeFile, cp, readFile } from "node:fs/promises";
 
 const OWNER = "halitsever";
-const ORIGIN = `https://${OWNER}.github.io`;
+const ORIGIN = "https://projects.halit.org";
 const OUT = new URL("../_site/", import.meta.url);
 const token = process.env.GITHUB_TOKEN;
 
@@ -19,7 +19,7 @@ async function listRepos() {
   }
 }
 
-/** A custom domain answers the github.io path with a redirect, and those sites live outside this host's sitemap. */
+/** A project with its own custom domain answers this host's path with a redirect, and those sites live outside this host's sitemap. */
 async function probe(repo) {
   const home = `${ORIGIN}/${repo.name}/`;
   const res = await fetch(home, { redirect: "manual" });

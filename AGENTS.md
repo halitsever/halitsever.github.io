@@ -1,6 +1,6 @@
 # halitsever.github.io
 
-Root GitHub Pages user site. It sits above every project site at `halitsever.github.io/<repo>/`, so its `robots.txt` and `sitemap.xml` are the only ones crawlers read for the whole host.
+Root GitHub Pages user site, served at `projects.halit.org` (custom domain; `halitsever.github.io` 301-redirects there). It sits above every project site at `projects.halit.org/<repo>/`, so its `robots.txt` and `sitemap.xml` are the only ones crawlers read for the whole host.
 
 ## How it works
 
