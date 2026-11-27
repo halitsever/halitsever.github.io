@@ -4,13 +4,13 @@
 <img src="https://halitsever-api.vercel.app/api/repo-title?title=halitsever.github.io">
 
 <p align="center">
-Root GitHub Pages site for halitsever.github.io: an index of Halit Sever's open source projects, plus the sitemap index, robots.txt and llms.txt that cover every project site under this domain.<br>
+Root GitHub Pages site for projects.halit.org: an index of Halit Sever's open source projects, plus the sitemap index, robots.txt and llms.txt that cover every project site under this domain.<br>
 <br/>
 <br/>
 <img src="https://img.shields.io/github/sponsors/halitsever" alt="GitHub sponsors"/>
 </p>
 <p align="center">
-<a align="center" href="https://halitsever.github.io/">Website</a>
+<a align="center" href="https://projects.halit.org/">Website</a>
   </p>
 </p>
 
@@ -18,11 +18,11 @@ Root GitHub Pages site for halitsever.github.io: an index of Halit Sever's open 
 <img src="https://halitsever-api.vercel.app/api/details"/>
 </p>
 
-- [**Project index**](https://halitsever.github.io/) - every public project as a wall of its own social cards, with the five most starred fanned out at the top.
-- [**Sitemap page**](https://halitsever.github.io/sitemap.html) - every page of every project site, grouped by project, for people and as internal links for crawlers.
-- [**Sitemap index**](https://halitsever.github.io/sitemap.xml) - links each project site's own sitemap, and lists the home page of sites that have none.
-- [**robots.txt**](https://halitsever.github.io/robots.txt) - crawlers only read robots.txt at the host root, so this one covers all project sites.
-- [**llms.txt**](https://halitsever.github.io/llms.txt) - a plain Markdown map of the projects for language models.
+- [**Project index**](https://projects.halit.org/) - every public project as a wall of its own social cards, with the five most starred fanned out at the top.
+- [**Sitemap page**](https://projects.halit.org/sitemap.html) - every page of every project site, grouped by project, for people and as internal links for crawlers.
+- [**Sitemap index**](https://projects.halit.org/sitemap.xml) - links each project site's own sitemap, and lists the home page of sites that have none.
+- [**robots.txt**](https://projects.halit.org/robots.txt) - crawlers only read robots.txt at the host root, so this one covers all project sites.
+- [**llms.txt**](https://projects.halit.org/llms.txt) - a plain Markdown map of the projects for language models.
 - **Rebuilds itself** - a weekly workflow picks up new project sites and sitemaps. Forks, archived repos and sites on a custom domain are left out.
 
 <p align="center" >
