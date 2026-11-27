@@ -1,5 +1,5 @@
 /** Builds the root user site: project index, sitemap index, robots.txt and llms.txt. */
-import { mkdir, writeFile, cp } from "node:fs/promises";
+import { mkdir, writeFile, cp, readFile } from "node:fs/promises";
 
 const OWNER = "halitsever";
 const ORIGIN = `https://${OWNER}.github.io`;
@@ -257,6 +257,16 @@ ${pile(all)}
 
 const repos = (await listRepos()).filter((r) => !r.private && !r.fork && !r.archived && r.name !== `${OWNER}.github.io` && r.name !== OWNER);
 const byStars = (a, b) => b.stargazers_count - a.stargazers_count || a.name.localeCompare(b.name);
+function minifyCss(css) {
+  return css
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/\s+/g, " ")
+    .replace(/\s*([{};,>])\s*/g, "$1")
+    .replace(/:\s+/g, ":")
+    .replace(/;}/g, "}")
+    .trim();
+}
+
 const sites = (await Promise.all(repos.filter((r) => r.has_pages).map(probe))).filter(Boolean).sort(byStars);
 const siteNames = new Set(sites.map((s) => s.name));
 const others = repos.filter((r) => !siteNames.has(r.name)).sort(byStars);
@@ -265,6 +275,9 @@ const today = new Date().toISOString().slice(0, 10);
 await mkdir(OUT, { recursive: true });
 // Static files (social card, search console verification) are served as-is.
 await cp(new URL("../public/", import.meta.url), OUT, { recursive: true });
+// The source stays readable; the served copy drops comments and whitespace so pages download less.
+const cssUrl = new URL("site.css", OUT);
+await writeFile(cssUrl, minifyCss(await readFile(cssUrl, "utf8")));
 await downloadCards([...sites, ...others], await socialCards());
 await Promise.all([
   writeFile(new URL("index.html", OUT), indexHtml(sites, others)),
