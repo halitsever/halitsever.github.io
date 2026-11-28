@@ -121,16 +121,20 @@ const SHELVES = [
 
 /** Real tasks typed into the search on load; each one filters to the project that does it. */
 const TASKS = [
-  { text: "run Claude Code on a VPS", q: "claude code vps" },
-  { text: "record my Mac screen with auto zoom", q: "screen recorder" },
-  { text: "run several Claude Code agents at once", q: "parallel agents" },
-  { text: "export JSON to Excel in Vue", q: "json excel" },
-  { text: "add a captcha to a NestJS API", q: "turnstile" },
-  { text: "make my Mac keyboard sound mechanical", q: "keyboard sound" },
-  { text: "get an alert before a domain expires", q: "domain expiry" },
-  { text: "screenshot a website from Node.js", q: "screenshot api" },
-  { text: "browse through my own web proxy", q: "web proxy" },
+  { text: "Run Claude Code on a VPS", q: "claude code vps" },
+  { text: "Record my Mac screen with auto zoom", q: "screen recorder" },
+  { text: "Watch videos with friends in sync", q: "watch together" },
+  { text: "Run several Claude Code agents at once", q: "parallel agents" },
+  { text: "Export JSON to Excel in Vue", q: "json excel" },
+  { text: "Add a captcha to a NestJS API", q: "turnstile" },
+  { text: "Make my Mac keyboard sound mechanical", q: "keyboard sound" },
+  { text: "Get an alert before a domain expires", q: "domain expiry" },
+  { text: "Screenshot a website from Node.js", q: "screenshot api" },
+  { text: "Browse through my own web proxy", q: "web proxy" },
 ];
+
+/** Chrome Web Store figures for Watchbear, checked by hand because the store has no public API. */
+const WATCHBEAR = { rating: "4.8", ratings: 59, store: "https://chromewebstore.google.com/detail/watchbear-watch-together/ldegfikaldilbcpgmiopdnnhpkpcnepn" };
 
 function shelvesOf(r) {
   const topics = new Set(r.topics ?? []);
@@ -192,13 +196,17 @@ function head({ title, description, path }) {
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400..700&family=Geist+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@800&family=Geist:wght@400..700&display=swap">
 <link rel="stylesheet" href="/site.css">
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "dd7e54d3f48841c187d72d9dbb92a6b6"}'></script>`;
 }
 
+/** The header mark reuses the favicon so the two never drift apart. */
+const logo = (await readFile(new URL("../public/favicon.svg", import.meta.url), "utf8"))
+  .replace('<svg xmlns="http://www.w3.org/2000/svg"', '<svg class="logo" width="28" height="28" aria-hidden="true"');
+
 const topbar = `<header class="bar">
-<a class="brand" href="/"><svg class="logo" viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><path fill="#ffb36b" d="M0 0h32v32H0z"/><path fill="#07080b" d="M8 6h4v8h8V6h4v20h-4v-8h-8v8H8z"/></svg>Halit Sever Projects</a>
+<a class="brand" href="/">${logo}Halit Sever Projects</a>
 <nav><a class="home" href="https://www.halit.org/">halit.org</a><a href="https://github.com/${OWNER}">GitHub</a><a href="/sitemap.html">Sitemap</a></nav>
 </header>`;
 
@@ -243,19 +251,6 @@ ${topbar}
 `;
 }
 
-/** Every project name beside the finder, lit up as the search matches it. The cards below carry the links for assistive tech. */
-function nameIndex(all) {
-  const stars = all.reduce((n, r) => n + r.stargazers_count, 0);
-  const names = all.map(
-    (r) =>
-      `<a href="${esc(r.home ?? (r.homepage || r.html_url))}" data-name="${esc(r.name)}" tabindex="-1">${esc(r.name)}${r.stargazers_count ? `<sup>${r.stargazers_count}</sup>` : ""}</a>`,
-  );
-  return `<div class="index" aria-hidden="true">
-<p class="names">${names.join(" ")}</p>
-<p class="caption">Most starred first, ${stars.toLocaleString("en")} GitHub stars between them. Names light up as the search matches them.</p>
-</div>`;
-}
-
 function indexHtml(sites, others) {
   const title = "Halit Sever: open source projects";
   const description = "Open source projects by Halit Sever: Node.js and TypeScript libraries, NestJS and Nuxt modules, macOS apps and Claude Code tooling.";
@@ -273,6 +268,7 @@ function indexHtml(sites, others) {
       itemListElement: all.map((r, i) => ({ "@type": "ListItem", position: i + 1, url: r.home ?? (r.homepage || r.html_url), name: r.name })),
     },
   };
+  const stars = all.reduce((n, r) => n + r.stargazers_count, 0);
   const counts = Object.fromEntries(SHELVES.map((s) => [s.id, all.filter((r) => shelvesOf(r).includes(s.id)).length]));
   const chips = [`<button type="button" class="chip" aria-pressed="true" data-shelf="">All <span>${all.length}</span></button>`]
     .concat(
@@ -292,20 +288,22 @@ ${head({ title, description, path: "/" })}
 ${topbar}
 <main>
 <section class="finder" aria-labelledby="finder-title">
-<div class="lead">
-<h1 id="finder-title">${all.length} open source tools. Type what you need to do.</h1>
-<form class="prompt" role="search" action="#">
-<label for="q" class="sr-only">Search the projects</label>
-<span class="mark" aria-hidden="true">&gt;</span>
-<input id="q" name="q" type="search" autocomplete="off" spellcheck="false" placeholder="search the projects" data-tasks='${esc(JSON.stringify(TASKS))}'>
-<kbd aria-hidden="true">/</kbd>
-</form>
+<h1 id="finder-title"><span class="intro"><a href="https://www.halit.org/">Halit Sever</a> ships apps that let you</span>
+<span class="lit"><span class="line">watch videos together,</span> <span class="line">record your Mac screen,</span> <span class="line">run Claude Code on a VPS.</span></span></h1>
+<div class="below">
+<p class="proof">${all.length} open source projects for the Mac, Android, the web and self-hosted servers, with ${stars.toLocaleString("en")} stars on GitHub. <a href="https://watchbear.net/">Watchbear</a>, the watch-together extension, is rated ${WATCHBEAR.rating} out of 5 by ${WATCHBEAR.ratings} people on the <a href="${WATCHBEAR.store}">Chrome Web Store</a>.</p>
+<form class="ask" role="search" action="#cards">
+<label for="q">What do you need?</label>
+<div class="field">
+<input id="q" name="q" type="search" autocomplete="off" placeholder="Search ${all.length} projects" data-tasks='${esc(JSON.stringify(TASKS))}'>
+<button type="submit">Search</button>
+</div>
 <div class="chips" role="group" aria-label="Filter by shelf">${chips}</div>
 <p class="status" role="status" aria-live="polite"></p>
+</form>
 </div>
-${nameIndex(all)}
 </section>
-<ol class="cards">${all.map((r, i) => card(r, i)).join("")}</ol>
+<ol class="cards" id="cards">${all.map((r, i) => card(r, i)).join("")}</ol>
 <p class="empty" hidden>Nothing matches that yet. Try a shorter word, or <a href="https://github.com/${OWNER}?tab=repositories">browse every repository on GitHub</a>.</p>
 </main>
 <footer>This page and its sitemap are rebuilt from the GitHub API every Monday and on every change. Made by <a href="https://www.halit.org/">Halit Sever</a>.</footer>

@@ -8,8 +8,8 @@
   if (!input || !cards.length) return;
 
   const tasks = JSON.parse(input.dataset.tasks || "[]");
-  const index = document.querySelector(".index");
-  const names = new Map([...document.querySelectorAll(".index a")].map((a) => [a.dataset.name, a]));
+  const idle = input.placeholder;
+  const list = document.getElementById("cards");
   const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
   let shelf = "";
   let task = null;
@@ -27,23 +27,6 @@
   const fits = (t, w) => t.startsWith(w) && (w.length > 3 || t.length <= w.length + 2);
   const hits = (card, words) => words.every((w) => wordsOf.get(card).some((t) => fits(t, w)));
 
-  /** Matching names stay lit and the best match takes the lamp colour; null shows every name at rest. */
-  function arrange(found) {
-    if (!index) return;
-    index.classList.toggle("filtering", found !== null);
-    for (const [name, el] of names) {
-      el.classList.toggle("hit", !!found?.includes(name));
-      el.classList.toggle("lead", found?.[0] === name);
-    }
-  }
-
-  function matches(query, onShelf) {
-    const words = fold(query).split(/\s+/).filter(Boolean);
-    return cards
-      .filter((c) => (!onShelf || c.dataset.shelves.split(" ").includes(onShelf)) && hits(c, words))
-      .map((c) => c.querySelector(".name").textContent);
-  }
-
   function apply() {
     const words = fold(input.value).split(/\s+/).filter(Boolean);
     let shown = 0;
@@ -54,7 +37,6 @@
       if (hit) shown++;
     }
     empty.hidden = shown > 0;
-    arrange(words.length || shelf ? matches(input.value, shelf) : null);
     status.textContent = words.length || shelf ? `${shown} of ${cards.length} projects` : "";
     const params = new URLSearchParams();
     if (input.value.trim()) params.set("q", input.value.trim());
@@ -79,6 +61,7 @@
     update();
   }));
   input.addEventListener("input", update);
+  /** Search fills in the task on screen when the field is empty, then brings the matches into view. */
   input.form.addEventListener("submit", (e) => {
     e.preventDefault();
     if (!input.value.trim() && task) {
@@ -86,6 +69,7 @@
       stopTyping();
       update();
     }
+    list.scrollIntoView({ behavior: still ? "auto" : "smooth" });
   });
   input.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
@@ -105,9 +89,8 @@
   function stopTyping() {
     clearTimeout(timer);
     timer = 0;
-    input.placeholder = "search the projects";
-    input.closest(".prompt").classList.remove("typing");
-    arrange(null);
+    input.placeholder = idle;
+    input.form.classList.remove("typing");
   }
   function typeTasks() {
     if (still || !tasks.length) {
@@ -118,7 +101,7 @@
     let t = 0;
     let n = 0;
     let deleting = false;
-    input.closest(".prompt").classList.add("typing");
+    input.form.classList.add("typing");
     const step = () => {
       task = tasks[t];
       const text = task.text;
@@ -128,10 +111,8 @@
       if (!deleting && n === text.length) {
         deleting = true;
         wait = 2600;
-        arrange(matches(task.q, ""));
       } else if (deleting && n === 0) {
         deleting = false;
-        arrange(null);
         t = (t + 1) % tasks.length;
         wait = 350;
       }
