@@ -136,6 +136,62 @@ const TASKS = [
 /** Chrome Web Store figures for Watchbear, checked by hand because the store has no public API. */
 const WATCHBEAR = { rating: "4.8", ratings: 59, store: "https://chromewebstore.google.com/detail/watchbear-watch-together/ldegfikaldilbcpgmiopdnnhpkpcnepn" };
 
+/** The hero screen, in 3x3 reading order. Media lives in public/hero/ at 1280x800 so a zoomed tile fills the screen exactly. */
+const SHOWCASE = [
+  { repo: "claudegrid", name: "claudegrid", line: "Opens a grid of Claude Code agents in one terminal window.", fact: "A prompt, model and worktree for each pane, on Linux and macOS." },
+  { repo: "explain-to-customer", name: "explain-to-customer", line: "Turns a code change into a short video your client understands.", fact: "A Claude Code skill. The video on this screen is its demo.", video: true },
+  { repo: "supadomain", name: "Supadomain", line: "Warns you on Slack before a domain expires.", fact: "Self-hosted. It reads expiry dates over RDAP." },
+  { repo: "girici-web-proxy", name: "Girici", line: "Lets you browse any site through a proxy on your own server.", fact: "Self-hosted from a Docker image." },
+  { repo: "watchbear", name: "Watchbear", line: "Lets you watch YouTube with friends in sync, with live chat and reactions.", fact: `Rated ${WATCHBEAR.rating} out of 5 by ${WATCHBEAR.ratings} people on the Chrome Web Store.` },
+  { repo: "haltos", name: "HaltOS", line: "Turns an Ubuntu VPS into a desktop for Claude Code.", fact: "One command installs it. You reach it over RDP.", video: true },
+  { repo: "keycream", name: "KeyCream", line: "Makes your Mac keyboard sound mechanical.", fact: "Seven sound packs recorded from real keyboards." },
+  { repo: "avora-screen-recorder", name: "Avora", line: "Records your Mac screen and zooms in where you click.", fact: "Free and open source, built with Swift. This screen moves the same way." },
+  { repo: "shotscreen", name: "Shotscreen", line: "Takes clean website screenshots on your Mac.", fact: "Viewport presets, full-page capture and dark mode." },
+];
+
+/** Tour order: Watchbear in the middle first, then around the screen. */
+const TOUR = [4, 1, 7, 5, 0, 3, 2, 8, 6];
+
+function camera(all, stars) {
+  const byName = new Map(all.map((r) => [r.name, r]));
+  const shows = SHOWCASE.map((s) => {
+    const r = byName.get(s.repo);
+    const url = r ? (r.home ?? (r.homepage || r.html_url)) : `https://github.com/${OWNER}/${s.repo}`;
+    const starLine = r?.stargazers_count >= 10 ? ` ${r.stargazers_count} stars on GitHub.` : "";
+    return { ...s, url, fact: s.fact + starLine };
+  });
+  const avora = shows.find((s) => s.repo === "avora-screen-recorder");
+  const media = (s, i) =>
+    s.video
+      ? `<video src="/hero/${s.repo}.mp4" poster="/hero/${s.repo}.webp" muted loop playsinline preload="none" aria-hidden="true"></video>`
+      : `<img src="/hero/${s.repo}.webp" alt="" width="1280" height="800" decoding="async"${i === 4 ? ' fetchpriority="high"' : ""}>`;
+  const tiles = shows.map((s, i) => `<a class="cam-tile" href="${esc(s.url)}" data-i="${i}" aria-label="${esc(s.name)}">${media(s, i)}</a>`).join("");
+  const now = shows
+    .map((s, i) => `<div class="cam-show" data-i="${i}" hidden><p class="cam-name">${esc(s.name)}</p><p class="cam-line">${esc(s.line)}</p><p class="cam-fact">${esc(s.fact)}</p><a class="cam-go" href="${esc(s.url)}">Open ${esc(s.name)}</a></div>`)
+    .join("");
+  return `<section class="cam" aria-labelledby="cam-title" data-tour="${TOUR.join(",")}">
+<div class="cam-intro">
+<h1 id="cam-title"><a href="https://www.halit.org/">Halit Sever</a> turns everyday problems into products you can use today.</h1>
+<p class="cam-proof">${all.length} open source projects with ${stars.toLocaleString("en")} stars on GitHub. <a href="https://watchbear.net/">Watchbear</a>, his watch-together extension, is rated ${WATCHBEAR.rating} out of 5 by ${WATCHBEAR.ratings} people on the <a href="${WATCHBEAR.store}">Chrome Web Store</a>.</p>
+</div>
+<div class="cam-stage">
+<div class="cam-screen">
+<div class="cam-sheet">${tiles}</div>
+<span class="cam-ring" aria-hidden="true"></span>
+<svg class="cam-cursor" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 2.5 19.5 12l-6.6 1.5L9.4 20z" fill="#fff" stroke="#07080b" stroke-width="1.4" stroke-linejoin="round"/></svg>
+</div>
+<div class="cam-bar">
+<p>This screen moves like an <a href="${esc(avora.url)}">Avora</a> recording: it zooms in where the cursor clicks.</p>
+<button type="button" class="cam-play" hidden><svg class="i-pause" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 3h3v10H4zM9 3h3v10H9z"/></svg><svg class="i-play" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11L13.5 8z"/></svg><span>Pause tour</span></button>
+</div>
+</div>
+<div class="cam-now">
+<p class="cam-hint" data-i="-1">Nine of his products are on this screen. Pick one to zoom in, pick it again to zoom out.</p>
+${now}
+</div>
+</section>`;
+}
+
 function shelvesOf(r) {
   const topics = new Set(r.topics ?? []);
   return SHELVES.filter((s) => s.topics.some((t) => topics.has(t))).map((s) => s.id);
@@ -287,12 +343,9 @@ ${head({ title, description, path: "/" })}
 </head>
 <body>
 ${topbar}
-<main>
-<section class="finder" aria-labelledby="finder-title">
-<h1 id="finder-title"><span class="intro"><a href="https://www.halit.org/">Halit Sever</a> ships apps that let you</span>
-<span class="lit"><span class="line">watch videos together,</span> <span class="line">record your Mac screen,</span> <span class="line">run Claude Code on a VPS.</span></span></h1>
-<div class="below">
-<p class="proof">${all.length} open source projects for the Mac, Android, the web and self-hosted servers, with ${stars.toLocaleString("en")} stars on GitHub. <a href="https://watchbear.net/">Watchbear</a>, the watch-together extension, is rated ${WATCHBEAR.rating} out of 5 by ${WATCHBEAR.ratings} people on the <a href="${WATCHBEAR.store}">Chrome Web Store</a>.</p>
+<main class="home">
+${camera(all, stars)}
+<section class="finder">
 <form class="ask" role="search" action="#cards">
 <label for="q">What do you need?</label>
 <div class="field">
@@ -302,7 +355,6 @@ ${topbar}
 <div class="chips" role="group" aria-label="Filter by shelf">${chips}</div>
 <p class="status" role="status" aria-live="polite"></p>
 </form>
-</div>
 </section>
 <ol class="cards" id="cards">${all.map((r, i) => card(r, i)).join("")}</ol>
 <p class="empty" hidden>Nothing matches that yet. Try a shorter word, or <a href="https://github.com/${OWNER}?tab=repositories">browse every repository on GitHub</a>.</p>
