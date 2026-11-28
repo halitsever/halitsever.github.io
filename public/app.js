@@ -8,8 +8,8 @@
   if (!input || !cards.length) return;
 
   const tasks = JSON.parse(input.dataset.tasks || "[]");
-  const deckCards = new Map([...document.querySelectorAll(".deck a")].map((a) => [a.dataset.name, a]));
-  const defaultOrder = cards.map((c) => c.querySelector(".name").textContent);
+  const index = document.querySelector(".index");
+  const names = new Map([...document.querySelectorAll(".index a")].map((a) => [a.dataset.name, a]));
   const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
   let shelf = "";
   let task = null;
@@ -27,15 +27,13 @@
   const fits = (t, w) => t.startsWith(w) && (w.length > 3 || t.length <= w.length + 2);
   const hits = (card, words) => words.every((w) => wordsOf.get(card).some((t) => fits(t, w)));
 
-  /** Matches go to the front of the deck, best first; the most starred projects fill the places behind them. */
-  function arrange(names) {
-    const lead = names.filter((n) => deckCards.has(n));
-    const list = [...lead, ...defaultOrder.filter((n) => deckCards.has(n) && !lead.includes(n))].slice(0, 5);
-    for (const [name, el] of deckCards) {
-      const k = list.indexOf(name);
-      el.style.setProperty("--k", k < 0 ? 6 : k);
-      el.classList.toggle("out", k < 0);
-      el.classList.toggle("front", k === 0);
+  /** Matching names stay lit and the best match takes the lamp colour; null shows every name at rest. */
+  function arrange(found) {
+    if (!index) return;
+    index.classList.toggle("filtering", found !== null);
+    for (const [name, el] of names) {
+      el.classList.toggle("hit", !!found?.includes(name));
+      el.classList.toggle("lead", found?.[0] === name);
     }
   }
 
@@ -56,7 +54,7 @@
       if (hit) shown++;
     }
     empty.hidden = shown > 0;
-    arrange(words.length || shelf ? matches(input.value, shelf) : defaultOrder);
+    arrange(words.length || shelf ? matches(input.value, shelf) : null);
     status.textContent = words.length || shelf ? `${shown} of ${cards.length} projects` : "";
     const params = new URLSearchParams();
     if (input.value.trim()) params.set("q", input.value.trim());
@@ -76,6 +74,7 @@
   }
 
   chips.forEach((chip) => chip.addEventListener("click", () => {
+    if (timer) stopTyping();
     setShelf(chip.dataset.shelf);
     update();
   }));
@@ -106,8 +105,9 @@
   function stopTyping() {
     clearTimeout(timer);
     timer = 0;
-    input.placeholder = "type a task or a tool name";
+    input.placeholder = "search the projects";
     input.closest(".prompt").classList.remove("typing");
+    arrange(null);
   }
   function typeTasks() {
     if (still || !tasks.length) {
@@ -131,6 +131,7 @@
         arrange(matches(task.q, ""));
       } else if (deleting && n === 0) {
         deleting = false;
+        arrange(null);
         t = (t + 1) % tasks.length;
         wait = 350;
       }
@@ -146,7 +147,6 @@
   const params = new URLSearchParams(location.search);
   if (params.get("shelf")) setShelf(params.get("shelf"));
   if (params.get("q")) input.value = params.get("q");
-  arrange(defaultOrder);
   if (params.size) apply();
   else typeTasks();
 })();

@@ -178,7 +178,9 @@ function head({ title, description, path }) {
 <title>${esc(title)}</title>
 <meta name="description" content="${esc(description)}">
 <link rel="canonical" href="${ORIGIN}${path}">
-<link rel="icon" href="/logo.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta name="theme-color" content="#07080b">
 <meta property="og:type" content="website">
 <meta property="og:title" content="${esc(title)}">
@@ -196,8 +198,8 @@ function head({ title, description, path }) {
 }
 
 const topbar = `<header class="bar">
-<a class="brand" href="/">Halit Sever Projects</a>
-<nav><a href="https://www.halit.org/">halit.org</a><a href="https://github.com/${OWNER}">GitHub</a><a href="/sitemap.html">Sitemap</a></nav>
+<a class="brand" href="/"><svg class="logo" viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><path fill="#ffb36b" d="M0 0h32v32H0z"/><path fill="#07080b" d="M8 6h4v8h8V6h4v20h-4v-8h-8v8H8z"/></svg>Halit Sever Projects</a>
+<nav><a class="home" href="https://www.halit.org/">halit.org</a><a href="https://github.com/${OWNER}">GitHub</a><a href="/sitemap.html">Sitemap</a></nav>
 </header>`;
 
 /** Page paths read better than full URLs once the project is named above them. */
@@ -235,21 +237,23 @@ ${topbar}
 <ul class="pages cols">${others.map((r) => `<li><a href="${esc(r.homepage || r.html_url)}">${esc(r.name)}</a></li>`).join("")}</ul>
 </section>
 </main>
-<footer>Rebuilt from the GitHub API every Monday and on every change.</footer>
+<footer>Rebuilt from the GitHub API every Monday and on every change. Made by <a href="https://www.halit.org/">Halit Sever</a>.</footer>
 </body>
 </html>
 `;
 }
 
-/** The 3D deck beside the finder: real project cards, reordered by the script so the best match comes to the front. Decorative; the list below carries the links for assistive tech. */
-function deck(all) {
-  const items = all
-    .filter((r) => r.card)
-    .map(
-      (r) =>
-        `<a href="${esc(r.home ?? (r.homepage || r.html_url))}" data-name="${esc(r.name)}" tabindex="-1"><img src="${r.card}" alt="" width="1280" height="640" decoding="async"><span>${esc(r.name)}</span></a>`,
-    );
-  return `<div class="deck" aria-hidden="true">${items.join("")}</div>`;
+/** Every project name beside the finder, lit up as the search matches it. The cards below carry the links for assistive tech. */
+function nameIndex(all) {
+  const stars = all.reduce((n, r) => n + r.stargazers_count, 0);
+  const names = all.map(
+    (r) =>
+      `<a href="${esc(r.home ?? (r.homepage || r.html_url))}" data-name="${esc(r.name)}" tabindex="-1">${esc(r.name)}${r.stargazers_count ? `<sup>${r.stargazers_count}</sup>` : ""}</a>`,
+  );
+  return `<div class="index" aria-hidden="true">
+<p class="names">${names.join(" ")}</p>
+<p class="caption">Most starred first, ${stars.toLocaleString("en")} GitHub stars between them. Names light up as the search matches them.</p>
+</div>`;
 }
 
 function indexHtml(sites, others) {
@@ -299,12 +303,12 @@ ${topbar}
 <div class="chips" role="group" aria-label="Filter by shelf">${chips}</div>
 <p class="status" role="status" aria-live="polite"></p>
 </div>
-${deck(all)}
+${nameIndex(all)}
 </section>
 <ol class="cards">${all.map((r, i) => card(r, i)).join("")}</ol>
 <p class="empty" hidden>Nothing matches that yet. Try a shorter word, or <a href="https://github.com/${OWNER}?tab=repositories">browse every repository on GitHub</a>.</p>
 </main>
-<footer>This page and its sitemap are rebuilt from the GitHub API every Monday and on every change.</footer>
+<footer>This page and its sitemap are rebuilt from the GitHub API every Monday and on every change. Made by <a href="https://www.halit.org/">Halit Sever</a>.</footer>
 </body>
 </html>
 `;
