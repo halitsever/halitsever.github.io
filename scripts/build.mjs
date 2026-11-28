@@ -121,7 +121,6 @@ const SHELVES = [
 
 /** Real tasks typed into the search on load; each one filters to the project that does it. */
 const TASKS = [
-  { text: "convert a UDF file to PDF", q: "udf" },
   { text: "run Claude Code on a VPS", q: "claude code vps" },
   { text: "record my Mac screen with auto zoom", q: "screen recorder" },
   { text: "run several Claude Code agents at once", q: "parallel agents" },
@@ -197,7 +196,7 @@ function head({ title, description, path }) {
 }
 
 const topbar = `<header class="bar">
-<a class="brand" href="/"><img src="/logo.svg" alt="" width="28" height="28"><span>Halit Sever</span></a>
+<a class="brand" href="/">Halit Sever Projects</a>
 <nav><a href="https://www.halit.org/">halit.org</a><a href="https://github.com/${OWNER}">GitHub</a><a href="/sitemap.html">Sitemap</a></nav>
 </header>`;
 
