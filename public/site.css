@@ -1,4 +1,4 @@
-/* projects.halit.org: the night palette and Geist type of halit.org, a condensed poster face for the hero, and the street-lamp amber for the finder. */
+/* projects.halit.org: the night palette and Geist type of halit.org, an Avora-style product screen for the hero, and the street-lamp amber for the finder. */
 
 :root {
   --night: #07080b;
@@ -124,94 +124,60 @@ main {
   margin: 0 auto;
 }
 
-/* finder: a poster headline lit from the top left by the lamp, then the search */
-.finder {
-  padding: clamp(48px, 9vh, 112px) 0 40px;
+/* the hero runs edge to edge, everything after it stays on the page grid */
+main.home {
+  width: auto;
 }
 
-.finder h1 {
-  font-weight: inherit;
+.home > :not(.cam) {
+  width: var(--page);
+  margin-inline: auto;
 }
 
-.intro {
-  display: block;
-  color: var(--soft);
-  font: 500 clamp(18px, 1.9vw, 24px) / 1.3 var(--sans);
-  letter-spacing: -0.015em;
+/* hero: nine real products on one screen, filmed the way Avora films a screen */
+.cam {
+  display: grid;
+  grid-template-columns: minmax(280px, 350px) minmax(0, 1fr);
+  grid-template-rows: auto 1fr;
+  grid-template-areas: "intro stage" "now stage";
+  column-gap: clamp(32px, 4vw, 60px);
+  padding-left: max(20px, (100% - 1240px) / 2);
+  border-bottom: 1px solid var(--line);
 }
 
-.intro a {
-  color: var(--text);
+.cam-intro {
+  grid-area: intro;
+  padding-top: clamp(40px, 7vh, 84px);
+}
+
+.cam h1 {
+  font: 650 clamp(30px, 2.8vw, 42px) / 1.05 var(--sans);
+  letter-spacing: -0.042em;
+  text-wrap: balance;
+}
+
+.cam h1 a {
   text-decoration: underline;
-  text-decoration-color: rgba(255, 179, 107, 0.55);
-  text-decoration-thickness: 2px;
-  text-underline-offset: 5px;
+  text-decoration-color: var(--lamp);
+  text-decoration-thickness: 0.07em;
+  text-underline-offset: 0.14em;
 }
 
-.intro a:hover {
+.cam h1 a:hover {
   color: var(--lamp);
 }
 
-.lit {
-  display: block;
-  margin-top: clamp(10px, 1.6vw, 20px);
-  font: 800 clamp(46px, 8.2vw, 124px) / 0.92 var(--display);
-  letter-spacing: -0.005em;
-}
-
-/* each line sits a step further from the lamp, so the light fades line by line */
-.line {
-  display: block;
-  width: fit-content;
-  padding-bottom: 0.04em;
-  text-wrap: balance;
-  background: linear-gradient(100deg, var(--near), var(--far));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
-.line:nth-child(1) {
-  --near: #fff3e2;
-  --far: #ffbe80;
-}
-
-.line:nth-child(2) {
-  --near: #f1e6da;
-  --far: #c4b4a3;
-}
-
-.line:nth-child(3) {
-  --near: #cfd0d6;
-  --far: #8e8f98;
-}
-
-.below {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 36px;
-  margin-top: clamp(36px, 6vh, 64px);
-}
-
-@media (min-width: 1000px) {
-  .below {
-    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
-    gap: 72px;
-  }
-
-  .proof {
-    padding-top: 6px;
-  }
-}
-
-.proof {
-  max-width: 46ch;
+.cam-proof {
+  max-width: 40ch;
+  margin-top: 22px;
   color: var(--soft);
-  font-size: 18px;
+  font-size: 16.5px;
   line-height: 1.6;
 }
 
-.proof a,
+.cam-proof a,
+.cam-go,
+.cam-bar a,
 .empty a {
   color: var(--text);
   text-decoration: underline;
@@ -219,8 +185,291 @@ main {
   text-underline-offset: 3px;
 }
 
-.proof a:hover {
+.cam-proof a:hover,
+.cam-go:hover {
   color: var(--lamp);
+}
+
+/* every caption shares one grid cell, so the panel keeps the height of the longest and nothing below it jumps */
+.cam-now {
+  grid-area: now;
+  align-self: end;
+  display: grid;
+  margin-top: 36px;
+  padding: 22px 0 clamp(36px, 6vh, 64px);
+  border-top: 1px solid var(--line);
+}
+
+.cam-now > * {
+  grid-area: 1 / 1;
+  transition: opacity 0.35s, visibility 0.35s;
+}
+
+.cam-now > [hidden] {
+  display: block;
+  visibility: hidden;
+  opacity: 0;
+}
+
+.cam-hint {
+  max-width: 34ch;
+  color: var(--soft);
+  font-size: 17px;
+}
+
+.cam-name {
+  font-size: 26px;
+  font-weight: 650;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+}
+
+.cam-line {
+  max-width: 36ch;
+  margin-top: 8px;
+  font-size: 17px;
+  line-height: 1.45;
+}
+
+.cam-fact {
+  max-width: 40ch;
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 15px;
+}
+
+.cam-go {
+  display: inline-block;
+  margin-top: 14px;
+  font-size: 15px;
+  font-weight: 550;
+  text-decoration-color: var(--lamp);
+}
+
+/* the wallpaper Avora puts behind a recording, in the lamp amber of this site */
+.cam-stage {
+  grid-area: stage;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(28px, 3.4vw, 56px) clamp(20px, 3.4vw, 56px) 20px;
+  background:
+    radial-gradient(60% 75% at 88% 4%, rgba(255, 196, 128, 0.95), rgba(255, 179, 107, 0) 70%),
+    radial-gradient(70% 70% at 4% 100%, rgba(52, 18, 60, 0.95), rgba(52, 18, 60, 0) 72%),
+    linear-gradient(155deg, #f08a4b 0%, #c44a3c 38%, #6c2341 70%, #2a1231 100%);
+}
+
+.cam-screen {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  background: #000;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.14), 0 48px 90px -36px rgba(24, 4, 22, 0.85);
+}
+
+.cam-sheet {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+  transform-origin: 0 0;
+  transition: transform 1.2s cubic-bezier(0.65, 0, 0.25, 1);
+}
+
+/* translate percentages are of the sheet itself, so one step moves exactly one tile at 3x */
+.cam.is-zoomed .cam-sheet {
+  transform: translate(calc(var(--c, 0) * -100%), calc(var(--r, 0) * -100%)) scale(3);
+}
+
+.cam-tile {
+  position: relative;
+  display: block;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  cursor: zoom-in;
+}
+
+.cam-tile img,
+.cam-tile video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* the outline sits inside the tile because the screen clips anything outside it */
+.cam-tile::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.9);
+  pointer-events: none;
+  transition: box-shadow 0.2s;
+}
+
+.cam-tile:focus-visible {
+  outline: 0;
+}
+
+.cam:not(.is-zoomed) .cam-tile:hover::after,
+.cam-tile:focus-visible::after {
+  box-shadow: inset 0 0 0 2px var(--lamp);
+}
+
+.cam.is-zoomed .cam-tile {
+  cursor: zoom-out;
+}
+
+.cam.is-zoomed .cam-tile:not(:focus-visible)::after {
+  box-shadow: none;
+}
+
+.cam-cursor,
+.cam-ring {
+  position: absolute;
+  left: 50%;
+  top: 112%;
+  pointer-events: none;
+  transition: left 1s cubic-bezier(0.45, 0, 0.2, 1), top 1s cubic-bezier(0.45, 0, 0.2, 1);
+}
+
+.cam-cursor {
+  z-index: 2;
+  width: 26px;
+  height: 26px;
+  margin: -3px 0 0 -4px;
+  opacity: 0;
+  filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.45));
+  transition-property: left, top, opacity, transform;
+}
+
+.cam-cursor.on {
+  opacity: 1;
+}
+
+.cam-cursor.down {
+  transform: scale(0.8);
+}
+
+.cam-ring {
+  width: 44px;
+  height: 44px;
+  margin: -22px 0 0 -22px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  opacity: 0;
+  transition: none;
+}
+
+.cam-ring.go {
+  animation: ring 0.55s ease-out;
+}
+
+@keyframes ring {
+  from {
+    opacity: 0.95;
+    transform: scale(0.3);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.3);
+  }
+}
+
+.cam-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 20px;
+  margin-top: 16px;
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.cam-bar p {
+  max-width: 62ch;
+}
+
+.cam-bar a {
+  color: #fff;
+  text-decoration-color: rgba(255, 255, 255, 0.5);
+}
+
+.cam-play {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 999px;
+  background: rgba(7, 8, 11, 0.3);
+  color: #fff;
+  font: 500 14px var(--sans);
+  cursor: pointer;
+}
+
+.cam-play:hover {
+  background: rgba(7, 8, 11, 0.55);
+}
+
+.cam-play svg {
+  width: 12px;
+  height: 12px;
+  fill: currentColor;
+}
+
+.cam-play .i-play,
+.cam-play.paused .i-pause {
+  display: none;
+}
+
+.cam-play.paused .i-play {
+  display: block;
+}
+
+@media (max-width: 900px) {
+  .cam {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto;
+    grid-template-areas: "intro" "stage" "now";
+    padding-left: 0;
+  }
+
+  .cam-intro,
+  .cam-now {
+    padding-inline: 20px;
+  }
+
+  .cam-intro {
+    padding-top: 36px;
+    padding-bottom: 28px;
+  }
+
+  .cam-now {
+    margin-top: 0;
+    border-top: 0;
+  }
+
+  .cam-stage {
+    padding: 20px 16px 16px;
+  }
+
+  .cam-bar {
+    align-items: flex-end;
+    font-size: 13.5px;
+  }
+}
+
+/* finder */
+.finder {
+  padding: clamp(48px, 8vh, 88px) 0 40px;
+}
+
+.ask {
+  max-width: 860px;
 }
 
 .ask label {
@@ -287,37 +536,6 @@ main {
 
 .field button:hover {
   background: #ffc896;
-}
-
-/* one entrance: the headline steps out of the dark line by line */
-@media (prefers-reduced-motion: no-preference) {
-  .intro,
-  .line {
-    animation: rise 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both;
-  }
-
-  .line:nth-child(1) {
-    animation-delay: 0.1s;
-  }
-
-  .line:nth-child(2) {
-    animation-delay: 0.2s;
-  }
-
-  .line:nth-child(3) {
-    animation-delay: 0.3s;
-  }
-
-  .below {
-    animation: rise 0.9s 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) both;
-  }
-}
-
-@keyframes rise {
-  from {
-    opacity: 0;
-    transform: translateY(0.4em);
-  }
 }
 
 .chips {
@@ -591,11 +809,6 @@ footer a {
 }
 
 @media (max-width: 720px) {
-  /* a wrapped line needs room around it to still read as one task */
-  .line + .line {
-    margin-top: 0.14em;
-  }
-
   .bar nav {
     gap: 14px;
     font-size: 14px;

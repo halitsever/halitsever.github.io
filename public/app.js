@@ -131,3 +131,128 @@
   if (params.size) apply();
   else typeTasks();
 })();
+
+/** Hero screen: a cursor tours nine products and the camera zooms where it clicks, until the visitor takes over. */
+(() => {
+  const cam = document.querySelector(".cam");
+  if (!cam) return;
+  const sheet = cam.querySelector(".cam-sheet");
+  const tiles = [...cam.querySelectorAll(".cam-tile")];
+  const shows = [...cam.querySelectorAll(".cam-now [data-i]")];
+  const now = cam.querySelector(".cam-now");
+  const cursor = cam.querySelector(".cam-cursor");
+  const ring = cam.querySelector(".cam-ring");
+  const play = cam.querySelector(".cam-play");
+  const label = play.querySelector("span");
+  const videos = [...cam.querySelectorAll("video")];
+  const tour = cam.dataset.tour.split(",").map(Number);
+  const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  let zoomed = -1;
+  let step = 0;
+  let run = 0;
+  let touring = false;
+  let wanted = !still;
+  let inView = true;
+
+  function caption(i) {
+    for (const s of shows) s.hidden = Number(s.dataset.i) !== i;
+  }
+
+  function zoom(i) {
+    zoomed = i;
+    cam.classList.toggle("is-zoomed", i >= 0);
+    if (i < 0) return;
+    sheet.style.setProperty("--c", i % 3);
+    sheet.style.setProperty("--r", Math.floor(i / 3));
+    caption(i);
+  }
+
+  function aim(el, i) {
+    el.style.left = `${(((i % 3) + 0.5) / 3) * 100}%`;
+    el.style.top = `${((Math.floor(i / 3) + 0.5) / 3) * 100}%`;
+  }
+
+  /** Each tour gets an id, so a wait from a stopped tour never resumes it. */
+  const wait = (ms, id) => new Promise((ok, stop) => setTimeout(() => (id === run ? ok() : stop()), ms));
+
+  async function start() {
+    if (touring || !wanted || !inView || document.hidden) return;
+    touring = true;
+    const id = ++run;
+    now.removeAttribute("aria-live");
+    cursor.classList.add("on");
+    try {
+      if (zoomed >= 0) {
+        zoom(-1);
+        await wait(1300, id);
+      }
+      // the full screen holds for a moment first, so the visitor sees all nine before the camera moves
+      if (step === 0) await wait(1400, id);
+      for (;;) {
+        const i = tour[step++ % tour.length];
+        aim(cursor, i);
+        await wait(1100, id);
+        cursor.classList.add("down");
+        aim(ring, i);
+        ring.classList.remove("go");
+        void ring.offsetWidth;
+        ring.classList.add("go");
+        await wait(180, id);
+        cursor.classList.remove("down");
+        zoom(i);
+        cursor.style.left = "58%";
+        cursor.style.top = "64%";
+        await wait(4800, id);
+        zoom(-1);
+        await wait(1500, id);
+      }
+    } catch {
+      /* a newer tour or a stop took over */
+    }
+  }
+
+  function halt() {
+    run++;
+    touring = false;
+    cursor.classList.remove("on", "down");
+  }
+
+  function setWanted(on) {
+    wanted = on;
+    play.classList.toggle("paused", !on);
+    label.textContent = on ? "Pause tour" : "Play tour";
+    if (on) start();
+    else halt();
+  }
+
+  tiles.forEach((tile, i) => {
+    tile.addEventListener("click", (e) => {
+      e.preventDefault();
+      setWanted(false);
+      now.setAttribute("aria-live", "polite");
+      zoom(zoomed === i ? -1 : i);
+    });
+  });
+
+  cam.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && zoomed >= 0) zoom(-1);
+  });
+
+  play.hidden = false;
+  play.addEventListener("click", () => setWanted(!wanted));
+  if (still) setWanted(false);
+
+  /** Videos and the tour only run while the screen is on screen, so a scrolled-away hero costs nothing. */
+  new IntersectionObserver(([entry]) => {
+    inView = entry.isIntersecting;
+    for (const v of videos) {
+      if (inView && !still) v.play().catch(() => {});
+      else v.pause();
+    }
+    if (inView) start();
+    else halt();
+  }).observe(cam.querySelector(".cam-screen"));
+
+  document.addEventListener("visibilitychange", () => (document.hidden ? halt() : start()));
+})();
