@@ -255,7 +255,8 @@ function deck(all) {
 function indexHtml(sites, others) {
   const title = "Halit Sever: open source projects";
   const description = "Open source projects by Halit Sever: Node.js and TypeScript libraries, NestJS and Nuxt modules, macOS apps and Claude Code tooling.";
-  const all = [...sites, ...others];
+  /** One list ordered by GitHub stars, whether or not a project has a site here. */
+  const all = [...sites, ...others].sort(byStars);
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
