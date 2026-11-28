@@ -82,10 +82,18 @@ img {
 }
 
 .brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
   font-size: 17px;
   font-weight: 650;
   letter-spacing: -0.025em;
   white-space: nowrap;
+}
+
+.logo {
+  flex: none;
+  display: block;
 }
 
 .bar nav {
@@ -256,7 +264,6 @@ main {
   display: block;
   aspect-ratio: 2 / 1;
   overflow: hidden;
-  border-radius: 16px;
   background: var(--panel);
   box-shadow: 0 0 0 1px var(--line), 0 24px 50px -30px rgba(0, 0, 0, 0.9);
 }
@@ -340,6 +347,20 @@ footer {
   font-size: 14px;
 }
 
+footer a {
+  color: var(--soft);
+  text-decoration: underline;
+  text-decoration-color: var(--line-strong);
+  text-underline-offset: 3px;
+}
+
+/* the footer links to halit.org too, so the header can drop it where the logo needs the room */
+@media (max-width: 440px) {
+  .bar .home {
+    display: none;
+  }
+}
+
 /* sitemap page */
 .lede {
   padding: clamp(48px, 9vh, 100px) 0 40px;
@@ -392,7 +413,6 @@ footer {
   display: block;
   aspect-ratio: 2 / 1;
   overflow: hidden;
-  border-radius: 12px;
   box-shadow: 0 0 0 1px var(--line);
 }
 
@@ -485,11 +505,11 @@ footer {
   }
 }
 
-/* the deck: real project cards in perspective; the script sets --k (0 is the front) */
+/* the name index: every project beside the finder, lit by the script as the search matches */
 .finder {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 48px;
+  gap: 28px;
 }
 
 .lead {
@@ -498,94 +518,68 @@ footer {
 
 @media (min-width: 1100px) {
   .finder {
-    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
-    align-items: center;
-    gap: 56px;
-  }
-
-  .deck {
-    height: 440px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+    gap: 64px;
   }
 }
 
-.deck {
-  position: relative;
-  height: clamp(220px, 58vw, 360px);
-  perspective: 1600px;
-  perspective-origin: 30% 40%;
+.index {
+  padding: 8px 0 4px 28px;
+  border-left: 1px solid var(--line);
 }
 
-@media (max-width: 1099px) {
-  .deck {
-    order: -1;
-    margin: -8px 0 -4px;
-    overflow: hidden;
-  }
-
-  /* the stack rises from the bottom edge, so the deck height is one card plus the steps behind it */
-  .deck {
-    height: calc(min(64vw, 440px) / 2 + 190px);
-  }
-
-  .finder .deck a {
-    left: 4%;
-    top: auto;
-    bottom: 40px;
-    width: min(64vw, 440px);
-  }
+.names {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 18px;
+  font-size: clamp(18px, 1.55vw, 22px);
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.025em;
 }
 
-@media all {
-
-  .deck a {
-    --k: 6;
-    position: absolute;
-    left: 14%;
-    top: 34%;
-    width: 78%;
-    transform-style: preserve-3d;
-    transform: translate3d(calc(var(--k) * 30px), calc(var(--k) * -34px), calc(var(--k) * -110px)) rotateY(-16deg) rotateX(9deg) rotateZ(-3deg);
-    opacity: calc(1 - var(--k) * 0.17);
-    z-index: calc(10 - var(--k));
-    transition: transform 0.85s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.6s;
-  }
-
-  .deck a.out {
-    opacity: 0;
-    pointer-events: none;
-    transform: translate3d(140px, -260px, -700px) rotateY(-16deg) rotateX(9deg) rotateZ(-3deg);
-  }
-
-  .deck img {
-    width: 100%;
-    height: auto;
-    aspect-ratio: 2 / 1;
-    object-fit: cover;
-    border-radius: 14px;
-    box-shadow: 0 0 0 1px rgba(237, 237, 239, 0.14), 0 40px 80px -30px rgba(0, 0, 0, 0.95), 0 10px 30px -10px rgba(0, 0, 0, 0.7);
-  }
-
-  .deck span {
-    position: absolute;
-    left: 0;
-    top: calc(100% + 18px);
-    color: var(--lamp);
-    font: 500 15px var(--mono);
-    opacity: 0;
-    transition: opacity 0.4s 0.3s;
-  }
-
-  .deck a.front span {
-    opacity: 1;
-  }
-
-  .deck a.front {
-    cursor: pointer;
-  }
+.names a {
+  white-space: nowrap;
+  color: var(--soft);
+  transition: color 0.35s, opacity 0.35s;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .deck a {
-    transition: none;
+.names a:hover {
+  color: var(--text);
+}
+
+.names sup {
+  margin-left: 3px;
+  color: var(--muted);
+  font-size: 0.5em;
+  font-weight: 500;
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.filtering .names a {
+  opacity: 0.2;
+}
+
+.filtering .names a.hit {
+  opacity: 1;
+  color: var(--text);
+}
+
+.filtering .names a.lead {
+  color: var(--lamp);
+}
+
+.caption {
+  max-width: 46ch;
+  margin-top: 22px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+@media (max-width: 720px) {
+  .index {
+    display: none;
   }
 }
