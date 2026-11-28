@@ -201,12 +201,13 @@ function head({ title, description, path }) {
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "dd7e54d3f48841c187d72d9dbb92a6b6"}'></script>`;
 }
 
-/** The header mark reuses the favicon so the two never drift apart. */
-const logo = (await readFile(new URL("../public/favicon.svg", import.meta.url), "utf8"))
-  .replace('<svg xmlns="http://www.w3.org/2000/svg"', '<svg class="logo" width="28" height="28" aria-hidden="true"');
+/** The signature is Mr De Haviland outlined to paths, so the header loads no script font. */
+const signature = (await readFile(new URL("../public/signature.svg", import.meta.url), "utf8"))
+  .trim()
+  .replace('<svg xmlns="http://www.w3.org/2000/svg"', '<svg class="signature" aria-hidden="true"');
 
 const topbar = `<header class="bar">
-<a class="brand" href="/">${logo}Halit Sever Projects</a>
+<a class="brand" href="/" aria-label="Halit Sever Projects">${signature}<span>Projects</span></a>
 <nav><a class="home" href="https://www.halit.org/">halit.org</a><a href="https://github.com/${OWNER}">GitHub</a><a href="/sitemap.html">Sitemap</a></nav>
 </header>`;
 
