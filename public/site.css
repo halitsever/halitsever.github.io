@@ -82,11 +82,10 @@ img {
 }
 
 .brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  font-size: 17px;
+  font-weight: 650;
+  letter-spacing: -0.025em;
+  white-space: nowrap;
 }
 
 .bar nav {
@@ -448,9 +447,6 @@ footer {
     font-size: 14px;
   }
 
-  .brand span {
-    display: none;
-  }
 
   .prompt {
     gap: 10px;
