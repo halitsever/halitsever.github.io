@@ -55,15 +55,6 @@ async function downloadCards(repos, cards) {
   );
 }
 
-/** Stable tilt per project, so the wall looks hand-pinned but does not reshuffle on every build. */
-function tilt(name) {
-  let h = 0;
-  for (const c of name) h = (h * 31 + c.charCodeAt(0)) | 0;
-  return (((h >>> 0) % 50) / 10 - 2.5).toFixed(1);
-}
-
-const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
-
 function sitemapIndex(sites, today) {
   const entries = [`${ORIGIN}/sitemap-pages.xml`, ...sites.filter((s) => s.sitemap).map((s) => s.sitemap)];
   return `<?xml version="1.0" encoding="UTF-8"?>
@@ -116,26 +107,70 @@ ${others.map((r) => line(r, r.html_url)).join("\n")}
 `;
 }
 
-function tile(r, url, i) {
-  const meta = [r.language, r.stargazers_count ? `${r.stargazers_count} ${r.stargazers_count === 1 ? "star" : "stars"}` : null].filter(Boolean).join(", ");
-  const art = r.card
-    ? `<img src="${r.card}" alt="" width="1280" height="640" loading="${i < 6 ? "eager" : "lazy"}" decoding="async">`
-    : `<span class="blank">${esc(r.name)}</span>`;
-  return `<li style="--tilt:${tilt(r.name)}deg;--i:${i}"><a href="${esc(url)}"><span class="art">${art}</span><span class="name">${esc(r.name)}</span><span class="desc">${esc(r.description)}</span>${meta ? `<span class="meta">${esc(meta)}</span>` : ""}</a></li>`;
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+
+/** Shelves group the projects by what a visitor wants, read from each repo's GitHub topics. */
+const SHELVES = [
+  { id: "claude", name: "Claude Code", topics: ["claude-code", "claude"] },
+  { id: "mac", name: "Mac apps", topics: ["macos-app", "macos", "mac-app"] },
+  { id: "self-hosted", name: "Self-hosted", topics: ["self-hosted"] },
+  { id: "libraries", name: "Libraries", topics: ["npm-package", "nodejs-library", "nestjs-module", "nuxt-module", "vue3-component", "api-wrapper"] },
+  { id: "turkey", name: "Türkiye", topics: ["turkey", "uyap", "e-devlet", "general-mobile"] },
+  { id: "android", name: "Android", topics: ["android"] },
+];
+
+/** Real tasks typed into the search on load; each one filters to the project that does it. */
+const TASKS = [
+  { text: "convert a UDF file to PDF", q: "udf" },
+  { text: "run Claude Code on a VPS", q: "claude code vps" },
+  { text: "record my Mac screen with auto zoom", q: "screen recorder" },
+  { text: "run several Claude Code agents at once", q: "parallel agents" },
+  { text: "export JSON to Excel in Vue", q: "json excel" },
+  { text: "add a captcha to a NestJS API", q: "turnstile" },
+  { text: "make my Mac keyboard sound mechanical", q: "keyboard sound" },
+  { text: "get an alert before a domain expires", q: "domain expiry" },
+  { text: "screenshot a website from Node.js", q: "screenshot api" },
+  { text: "browse through my own web proxy", q: "web proxy" },
+];
+
+function shelvesOf(r) {
+  const topics = new Set(r.topics ?? []);
+  return SHELVES.filter((s) => s.topics.some((t) => topics.has(t))).map((s) => s.id);
 }
 
-/** The five most starred cards, fanned out next to the intro like a hand of cards. */
-function pile(repos) {
-  const top = [...repos]
-    .filter((r) => r.card)
-    .sort((a, b) => b.stargazers_count - a.stargazers_count)
-    .slice(0, 5)
-    .reverse();
-  const items = top.map(
-    (r, i) =>
-      `<a href="${esc(r.home ?? r.html_url)}" style="--n:${i - (top.length - 1) / 2}" aria-label="${esc(r.name)}"><img src="${r.card}" alt="" width="1280" height="640"></a>`,
-  );
-  return `<div class="pile">${items.join("")}</div>`;
+/** Lowercased, accent-folded text the client-side search matches against. */
+function searchText(r) {
+  const shelfNames = shelvesOf(r).map((id) => SHELVES.find((s) => s.id === id).name);
+  return [r.name.replace(/-/g, " "), r.description, ...(r.topics ?? []).map((t) => t.replace(/-/g, " ")), r.language, ...shelfNames]
+    .filter(Boolean)
+    .join(" ")
+    .toLocaleLowerCase("tr")
+    .replace(/ı/g, "i")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+/** Initials stand in for a missing social card, set large so a card never looks empty. */
+function initials(name) {
+  return name
+    .split("-")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0].toUpperCase())
+    .join("");
+}
+
+function card(r, i) {
+  const url = r.home ?? (r.homepage || r.html_url);
+  const where = r.home ? null : r.homepage ? new URL(r.homepage).hostname : "GitHub";
+  const meta = [r.language, r.stargazers_count ? `${r.stargazers_count} ${r.stargazers_count === 1 ? "star" : "stars"}` : null, where && `on ${where}`]
+    .filter(Boolean)
+    .join(", ");
+  const art = r.card
+    ? `<img src="${r.card}" alt="" width="1280" height="640" loading="${i < 6 ? "eager" : "lazy"}" decoding="async">`
+    : `<span class="blank" aria-hidden="true">${esc(initials(r.name))}</span>`;
+  return `<li class="card" data-search="${esc(searchText(r))}" data-shelves="${shelvesOf(r).join(" ")}" style="view-transition-name:p-${esc(r.name)}">
+<a href="${esc(url)}"><span class="art">${art}</span><span class="text"><span class="name">${esc(r.name)}</span><span class="desc">${esc(r.description)}</span>${meta ? `<span class="meta">${esc(meta)}</span>` : ""}</span></a></li>`;
 }
 
 function head({ title, description, path }) {
@@ -145,6 +180,7 @@ function head({ title, description, path }) {
 <meta name="description" content="${esc(description)}">
 <link rel="canonical" href="${ORIGIN}${path}">
 <link rel="icon" href="/logo.svg" type="image/svg+xml">
+<meta name="theme-color" content="#07080b">
 <meta property="og:type" content="website">
 <meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(description)}">
@@ -155,10 +191,15 @@ function head({ title, description, path }) {
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;600;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400..700&family=Geist+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="/site.css">
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "dd7e54d3f48841c187d72d9dbb92a6b6"}'></script>`;
 }
+
+const topbar = `<header class="bar">
+<a class="brand" href="/"><img src="/logo.svg" alt="" width="28" height="28"><span>Halit Sever</span></a>
+<nav><a href="https://www.halit.org/">halit.org</a><a href="https://github.com/${OWNER}">GitHub</a><a href="/sitemap.html">Sitemap</a></nav>
+</header>`;
 
 /** Page paths read better than full URLs once the project is named above them. */
 function pagePath(url, home) {
@@ -170,8 +211,8 @@ function sitemapHtml(sites, others) {
   const title = "Sitemap: every page of Halit Sever's projects";
   const description = "Every page across Halit Sever's open source project sites, grouped by project.";
   const total = sites.reduce((n, s) => n + s.pages.length, 0);
-  const block = (s, i) => `<li class="project" style="--tilt:${tilt(s.name)}deg;--i:${i}">
-<a class="thumb" href="${esc(s.home)}" aria-label="${esc(s.name)}">${s.card ? `<img src="${s.card}" alt="" width="1280" height="640" loading="lazy" decoding="async">` : `<span class="blank">${esc(s.name)}</span>`}</a>
+  const block = (s) => `<li class="project">
+<a class="thumb" href="${esc(s.home)}" aria-label="${esc(s.name)}">${s.card ? `<img src="${s.card}" alt="" width="1280" height="640" loading="lazy" decoding="async">` : `<span class="blank" aria-hidden="true">${esc(initials(s.name))}</span>`}</a>
 <div><h3><a href="${esc(s.home)}">${esc(s.name)}</a></h3><p class="desc">${esc(s.description)}</p>
 <ul class="pages">${[...s.pages]
     .sort((a, b) => (b === s.home) - (a === s.home))
@@ -182,27 +223,34 @@ function sitemapHtml(sites, others) {
 <head>
 ${head({ title, description, path: "/sitemap.html" })}
 </head>
-<body>
-<header class="intro">
-<a href="/"><img class="logo" src="/logo.svg" alt="All projects" width="88" height="88"></a>
+<body class="sitemap">
+${topbar}
+<main>
+<section class="lede">
 <h1>Sitemap</h1>
 <p>${total} pages across ${sites.length} project sites, grouped by project. Search engines read the same list from <a href="/sitemap.xml">sitemap.xml</a>.</p>
-<nav><a href="/">All projects</a><a href="https://github.com/${OWNER}">GitHub</a></nav>
-</header>
-<main>
-<section>
-<h2>Project sites</h2>
-<ol class="map">${sites.map(block).join("")}</ol>
 </section>
-<section>
-<h2>Repositories without a site</h2>
-<ul class="pages cols">${others.map((r) => `<li><a href="${esc(r.html_url)}">${esc(r.name)}</a></li>`).join("")}</ul>
+<ol class="map">${sites.map(block).join("")}</ol>
+<section class="rest">
+<h2>Repositories without a site here</h2>
+<ul class="pages cols">${others.map((r) => `<li><a href="${esc(r.homepage || r.html_url)}">${esc(r.name)}</a></li>`).join("")}</ul>
 </section>
 </main>
-<footer>Rebuilt from the GitHub API every Monday.</footer>
+<footer>Rebuilt from the GitHub API every Monday and on every change.</footer>
 </body>
 </html>
 `;
+}
+
+/** The 3D deck beside the finder: real project cards, reordered by the script so the best match comes to the front. Decorative; the list below carries the links for assistive tech. */
+function deck(all) {
+  const items = all
+    .filter((r) => r.card)
+    .map(
+      (r) =>
+        `<a href="${esc(r.home ?? (r.homepage || r.html_url))}" data-name="${esc(r.name)}" tabindex="-1"><img src="${r.card}" alt="" width="1280" height="640" decoding="async"><span>${esc(r.name)}</span></a>`,
+    );
+  return `<div class="deck" aria-hidden="true">${items.join("")}</div>`;
 }
 
 function indexHtml(sites, others) {
@@ -218,38 +266,45 @@ function indexHtml(sites, others) {
     author: { "@type": "Person", name: "Halit Sever", url: "https://www.halit.org/", sameAs: [`https://github.com/${OWNER}`] },
     mainEntity: {
       "@type": "ItemList",
-      itemListElement: all.map((r, i) => ({ "@type": "ListItem", position: i + 1, url: r.home ?? r.html_url, name: r.name })),
+      itemListElement: all.map((r, i) => ({ "@type": "ListItem", position: i + 1, url: r.home ?? (r.homepage || r.html_url), name: r.name })),
     },
   };
+  const counts = Object.fromEntries(SHELVES.map((s) => [s.id, all.filter((r) => shelvesOf(r).includes(s.id)).length]));
+  const chips = [`<button type="button" class="chip" aria-pressed="true" data-shelf="">All <span>${all.length}</span></button>`]
+    .concat(
+      SHELVES.filter((s) => counts[s.id]).map(
+        (s) => `<button type="button" class="chip" aria-pressed="false" data-shelf="${s.id}">${esc(s.name)} <span>${counts[s.id]}</span></button>`,
+      ),
+    )
+    .join("");
   return `<!doctype html>
 <html lang="en">
 <head>
 ${head({ title, description, path: "/" })}
 <script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, "\\u003c")}</script>
+<script defer src="/app.js"></script>
 </head>
 <body>
-<header class="intro">
-<img class="logo" src="/logo.svg" alt="" width="88" height="88">
-<h1>Halit Sever</h1>
-<div class="intro-body">
-<div>
-<p>I build open source tools: Node.js and TypeScript libraries, NestJS and Nuxt modules, macOS apps and tools for Claude Code. Every card below is a project you can use today.</p>
-<nav><a href="https://github.com/${OWNER}">GitHub</a><a href="https://www.halit.org/">halit.org</a><a href="/sitemap.html">Sitemap</a></nav>
-</div>
-${pile(all)}
-</div>
-</header>
+${topbar}
 <main>
-<section>
-<h2>Projects with a website</h2>
-<ol class="wall">${sites.map((s, i) => tile(s, s.home, i)).join("")}</ol>
+<section class="finder" aria-labelledby="finder-title">
+<div class="lead">
+<h1 id="finder-title">${all.length} open source tools. Type what you need to do.</h1>
+<form class="prompt" role="search" action="#">
+<label for="q" class="sr-only">Search the projects</label>
+<span class="mark" aria-hidden="true">&gt;</span>
+<input id="q" name="q" type="search" autocomplete="off" spellcheck="false" placeholder="search the projects" data-tasks='${esc(JSON.stringify(TASKS))}'>
+<kbd aria-hidden="true">/</kbd>
+</form>
+<div class="chips" role="group" aria-label="Filter by shelf">${chips}</div>
+<p class="status" role="status" aria-live="polite"></p>
+</div>
+${deck(all)}
 </section>
-<section>
-<h2>More on GitHub</h2>
-<ol class="wall">${others.map((r, i) => tile(r, r.html_url, sites.length + i)).join("")}</ol>
-</section>
+<ol class="cards">${all.map((r, i) => card(r, i)).join("")}</ol>
+<p class="empty" hidden>Nothing matches that yet. Try a shorter word, or <a href="https://github.com/${OWNER}?tab=repositories">browse every repository on GitHub</a>.</p>
 </main>
-<footer>This page and its sitemap are rebuilt from the GitHub API every Monday.</footer>
+<footer>This page and its sitemap are rebuilt from the GitHub API every Monday and on every change.</footer>
 </body>
 </html>
 `;
