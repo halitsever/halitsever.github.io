@@ -1,4 +1,4 @@
-/* projects.halit.org: the night palette and Geist type of halit.org, with the street-lamp amber kept for the one thing you act on, the finder. */
+/* projects.halit.org: the night palette and Geist type of halit.org, a condensed poster face for the hero, and the street-lamp amber for the finder. */
 
 :root {
   --night: #07080b;
@@ -12,7 +12,7 @@
   --lamp: #ffb36b;
   --sky: #7aa2f7;
   --sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --display: "Big Shoulders Display", "Arial Narrow", sans-serif;
   --page: min(1240px, 100% - 40px);
   color-scheme: dark;
 }
@@ -112,46 +112,130 @@ main {
   margin: 0 auto;
 }
 
-/* finder */
+/* finder: a poster headline lit from the top left by the lamp, then the search */
 .finder {
-  padding: clamp(56px, 11vh, 128px) 0 36px;
+  padding: clamp(48px, 9vh, 112px) 0 40px;
 }
 
 .finder h1 {
-  max-width: 17ch;
-  font-size: clamp(36px, 6.2vw, 76px);
-  font-weight: 650;
-  line-height: 1;
-  letter-spacing: -0.042em;
-  text-wrap: balance;
+  font-weight: inherit;
 }
 
-.prompt {
-  position: relative;
+.intro {
+  display: block;
+  color: var(--soft);
+  font: 500 clamp(18px, 1.9vw, 24px) / 1.3 var(--sans);
+  letter-spacing: -0.015em;
+}
+
+.intro a {
+  color: var(--text);
+  text-decoration: underline;
+  text-decoration-color: rgba(255, 179, 107, 0.55);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 5px;
+}
+
+.intro a:hover {
+  color: var(--lamp);
+}
+
+.lit {
+  display: block;
+  margin-top: clamp(10px, 1.6vw, 20px);
+  font: 800 clamp(46px, 8.2vw, 124px) / 0.92 var(--display);
+  letter-spacing: -0.005em;
+}
+
+/* each line sits a step further from the lamp, so the light fades line by line */
+.line {
+  display: block;
+  width: fit-content;
+  padding-bottom: 0.04em;
+  text-wrap: balance;
+  background: linear-gradient(100deg, var(--near), var(--far));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.line:nth-child(1) {
+  --near: #fff3e2;
+  --far: #ffbe80;
+}
+
+.line:nth-child(2) {
+  --near: #f1e6da;
+  --far: #c4b4a3;
+}
+
+.line:nth-child(3) {
+  --near: #cfd0d6;
+  --far: #8e8f98;
+}
+
+.below {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 36px;
+  margin-top: clamp(36px, 6vh, 64px);
+}
+
+@media (min-width: 1000px) {
+  .below {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: 72px;
+  }
+
+  .proof {
+    padding-top: 6px;
+  }
+}
+
+.proof {
+  max-width: 46ch;
+  color: var(--soft);
+  font-size: 18px;
+  line-height: 1.6;
+}
+
+.proof a,
+.empty a {
+  color: var(--text);
+  text-decoration: underline;
+  text-decoration-color: var(--line-strong);
+  text-underline-offset: 3px;
+}
+
+.proof a:hover {
+  color: var(--lamp);
+}
+
+.ask label {
+  display: block;
+  margin-bottom: 14px;
+  font: 800 clamp(30px, 3.2vw, 42px) / 1 var(--display);
+}
+
+.field {
   display: flex;
   align-items: center;
-  gap: 16px;
-  margin-top: clamp(32px, 5vh, 52px);
-  padding: 0 22px 0 26px;
-  height: clamp(68px, 9vw, 92px);
+  gap: 10px;
+  height: clamp(60px, 5.6vw, 74px);
+  padding: 0 8px 0 22px;
   background: linear-gradient(180deg, var(--panel-2), var(--panel));
   border: 1px solid var(--line-strong);
-  border-radius: 22px;
+  border-radius: 16px;
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05) inset, 0 30px 80px -40px rgba(0, 0, 0, 0.9);
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.prompt:focus-within {
+.field:focus-within {
   border-color: rgba(255, 179, 107, 0.55);
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05) inset, 0 0 0 6px rgba(255, 179, 107, 0.1), 0 30px 80px -40px rgba(0, 0, 0, 0.9);
 }
 
-.prompt .mark {
-  color: var(--lamp);
-  font: 500 clamp(20px, 2.6vw, 32px) / 1 var(--mono);
-}
-
-.prompt input {
+.field input {
   flex: 1;
   min-width: 0;
   height: 100%;
@@ -160,34 +244,68 @@ main {
   outline: 0;
   color: var(--text);
   caret-color: var(--lamp);
-  font: 400 clamp(18px, 2.6vw, 32px) / 1 var(--mono);
-  letter-spacing: -0.02em;
+  font: 500 clamp(17px, 1.7vw, 21px) / 1 var(--sans);
+  letter-spacing: -0.015em;
 }
 
-.prompt input::placeholder {
+.field input::placeholder {
   color: var(--muted);
   opacity: 1;
 }
 
-/* a lamp-coloured block cursor follows the typed placeholder while it plays */
-.prompt.typing input::placeholder {
+.typing .field input::placeholder {
   color: var(--soft);
 }
 
-.prompt input::-webkit-search-cancel-button {
+.field input::-webkit-search-cancel-button {
   filter: invert(1) opacity(0.5);
 }
 
-.prompt kbd {
+.field button {
   flex: none;
-  display: grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  border: 1px solid var(--line-strong);
-  border-radius: 9px;
-  color: var(--muted);
-  font: 500 15px var(--mono);
+  height: calc(100% - 16px);
+  padding: 0 22px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--lamp);
+  color: var(--night);
+  font: 650 16px var(--sans);
+  cursor: pointer;
+}
+
+.field button:hover {
+  background: #ffc896;
+}
+
+/* one entrance: the headline steps out of the dark line by line */
+@media (prefers-reduced-motion: no-preference) {
+  .intro,
+  .line {
+    animation: rise 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+
+  .line:nth-child(1) {
+    animation-delay: 0.1s;
+  }
+
+  .line:nth-child(2) {
+    animation-delay: 0.2s;
+  }
+
+  .line:nth-child(3) {
+    animation-delay: 0.3s;
+  }
+
+  .below {
+    animation: rise 0.9s 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.4em);
+  }
 }
 
 .chips {
@@ -246,6 +364,7 @@ main {
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
   gap: 40px 28px;
   padding-bottom: 96px;
+  scroll-margin-top: 88px;
 }
 
 .card[hidden] {
@@ -334,8 +453,6 @@ main {
 
 .empty a {
   color: var(--lamp);
-  text-decoration: underline;
-  text-underline-offset: 3px;
 }
 
 footer {
@@ -462,21 +579,16 @@ footer a {
 }
 
 @media (max-width: 720px) {
+  /* a wrapped line needs room around it to still read as one task */
+  .line + .line {
+    margin-top: 0.14em;
+  }
+
   .bar nav {
     gap: 14px;
     font-size: 14px;
   }
 
-
-  .prompt {
-    gap: 10px;
-    padding: 0 14px 0 18px;
-    border-radius: 18px;
-  }
-
-  .prompt kbd {
-    display: none;
-  }
 
   .chips {
     flex-wrap: nowrap;
@@ -502,84 +614,5 @@ footer a {
   *::before,
   *::after {
     transition: none !important;
-  }
-}
-
-/* the name index: every project beside the finder, lit by the script as the search matches */
-.finder {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 28px;
-}
-
-.lead {
-  min-width: 0;
-}
-
-@media (min-width: 1100px) {
-  .finder {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    align-items: start;
-    gap: 64px;
-  }
-}
-
-.index {
-  padding: 8px 0 4px 28px;
-  border-left: 1px solid var(--line);
-}
-
-.names {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 18px;
-  font-size: clamp(18px, 1.55vw, 22px);
-  font-weight: 600;
-  line-height: 1.3;
-  letter-spacing: -0.025em;
-}
-
-.names a {
-  white-space: nowrap;
-  color: var(--soft);
-  transition: color 0.35s, opacity 0.35s;
-}
-
-.names a:hover {
-  color: var(--text);
-}
-
-.names sup {
-  margin-left: 3px;
-  color: var(--muted);
-  font-size: 0.5em;
-  font-weight: 500;
-  letter-spacing: 0;
-  font-variant-numeric: tabular-nums;
-}
-
-.filtering .names a {
-  opacity: 0.2;
-}
-
-.filtering .names a.hit {
-  opacity: 1;
-  color: var(--text);
-}
-
-.filtering .names a.lead {
-  color: var(--lamp);
-}
-
-.caption {
-  max-width: 46ch;
-  margin-top: 22px;
-  color: var(--muted);
-  font-size: 14px;
-}
-
-@media (max-width: 720px) {
-  .index {
-    display: none;
   }
 }
