@@ -74,7 +74,7 @@ img {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 14px max(20px, (100% - 1240px) / 2);
+  padding: 10px max(20px, (100% - 1240px) / 2);
   background: rgba(7, 8, 11, 0.72);
   backdrop-filter: blur(14px) saturate(1.4);
   -webkit-backdrop-filter: blur(14px) saturate(1.4);
@@ -82,18 +82,30 @@ img {
 }
 
 .brand {
+  --sig: 40px;
   display: flex;
-  align-items: center;
-  gap: 11px;
-  font-size: 17px;
-  font-weight: 650;
-  letter-spacing: -0.025em;
+  align-items: flex-end;
+  gap: 10px;
+  color: var(--text);
   white-space: nowrap;
 }
 
-.logo {
+.signature {
   flex: none;
   display: block;
+  height: var(--sig);
+  width: auto;
+  aspect-ratio: 299.7 / 94.7;
+}
+
+/* lifted by the signature's descender depth so "Projects" sits on its baseline */
+.brand span {
+  margin-bottom: calc(var(--sig) * 16 / 94.7 - 3px);
+  color: var(--muted);
+  line-height: 1;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
 }
 
 .bar nav {
@@ -587,6 +599,11 @@ footer a {
   .bar nav {
     gap: 14px;
     font-size: 14px;
+  }
+
+  .brand {
+    --sig: 32px;
+    gap: 8px;
   }
 
 
